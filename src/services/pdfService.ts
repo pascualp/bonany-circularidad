@@ -94,28 +94,33 @@ export const generateHotelPDF = async (report: HotelReport): Promise<Blob> => {
   // --- Chart Area (Left) ---
   const chartX = margin;
   const chartY = currentY;
-  const chartWidth = 90;
+  const chartWidth = 85;
   const chartHeight = 65;
 
   // Find max value for dynamic scaling
   const monthData = report.monthlyData.filter(m => m.mes.toLowerCase() !== 'total');
   const maxValInData = Math.max(...monthData.map(d => Math.max(d.envasesRetornable, d.noRetornable)));
+  const maxLocalInData = Math.max(...monthData.map(d => d.productoLocal));
+  
   // Round up to nearest 100 or 500 for a clean scale
   const chartScaleMax = maxValInData > 400 ? Math.ceil(maxValInData / 500) * 500 : 400;
+  // Round up to nearest 1000 for local product
+  const chartScaleMaxLocal = maxLocalInData > 1000 ? Math.ceil(maxLocalInData / 1000) * 1000 : 1000;
 
   // Chart Title
   doc.setFontSize(8);
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
-  doc.text('Envases mensuales: Retornable vs No retornable', chartX + 20, chartY - 5);
+  doc.text('Evolución mensual: Envases y Producto Local', chartX + 15, chartY - 5);
 
   // Draw Axes
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.2);
-  doc.line(chartX + 10, chartY, chartX + 10, chartY + chartHeight); // Y axis
+  doc.line(chartX + 10, chartY, chartX + 10, chartY + chartHeight); // Left Y axis
+  doc.line(chartX + chartWidth, chartY, chartX + chartWidth, chartY + chartHeight); // Right Y axis
   doc.line(chartX + 10, chartY + chartHeight, chartX + chartWidth, chartY + chartHeight); // X axis
 
-  // Y Axis Labels (Dynamic based on chartScaleMax)
+  // Y Axis Labels (Left - Units)
   doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
   const steps = 8;
@@ -126,22 +131,33 @@ export const generateHotelPDF = async (report: HotelReport): Promise<Blob> => {
     doc.line(chartX + 10, y, chartX + chartWidth, y);
   }
   
-  // Y Axis Title
+  // Y Axis Labels (Right - Euros)
+  for (let i = 0; i <= chartScaleMaxLocal; i += chartScaleMaxLocal / steps) {
+    const y = chartY + chartHeight - (i / chartScaleMaxLocal) * chartHeight;
+    doc.text(Math.round(i).toString() + ' €', chartX + chartWidth + 2, y + 2, { align: 'left' });
+  }
+
+  // Y Axis Titles
   doc.saveGraphicsState();
   doc.setFontSize(7);
   doc.text('Unidades', chartX + 2, chartY + chartHeight / 2 + 5, { angle: 90 });
+  doc.text('Euros (€)', chartX + chartWidth + 12, chartY + chartHeight / 2 - 5, { angle: 270 });
   doc.restoreGraphicsState();
 
-  // Bars
+  // Bars and Lines
   const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   const barGroupWidth = (chartWidth - 15) / 12;
   const singleBarWidth = barGroupWidth * 0.4;
+  
+  let prevLineX: number | null = null;
+  let prevLineY: number | null = null;
 
   months.forEach((mName, i) => {
     const x = chartX + 12 + i * barGroupWidth;
     const data = monthData.find(d => d.mes.toLowerCase().startsWith(mName.toLowerCase()));
     
     if (data) {
+      // Draw Bars
       const hRet = (data.envasesRetornable / chartScaleMax) * chartHeight;
       const hNoRet = (data.noRetornable / chartScaleMax) * chartHeight;
 
@@ -150,6 +166,23 @@ export const generateHotelPDF = async (report: HotelReport): Promise<Blob> => {
       
       doc.setFillColor(255, 153, 51); // Orange
       doc.rect(x + singleBarWidth, chartY + chartHeight - hNoRet, singleBarWidth, hNoRet, 'F');
+      
+      // Calculate Line Coordinates
+      const lineX = x + singleBarWidth; // Center of the bar group
+      const lineY = chartY + chartHeight - (data.productoLocal / chartScaleMaxLocal) * chartHeight;
+      
+      if (prevLineX !== null && prevLineY !== null) {
+        doc.setDrawColor(46, 204, 113); // Emerald green
+        doc.setLineWidth(0.5);
+        doc.line(prevLineX, prevLineY, lineX, lineY);
+      }
+      
+      // Draw point
+      doc.setFillColor(46, 204, 113);
+      doc.circle(lineX, lineY, 1, 'F');
+      
+      prevLineX = lineX;
+      prevLineY = lineY;
     }
 
     doc.setFontSize(6);
@@ -158,13 +191,18 @@ export const generateHotelPDF = async (report: HotelReport): Promise<Blob> => {
   });
 
   // Legend
-  doc.setFillColor(12, 110, 180); doc.rect(chartX + 70, chartY + 2, 3, 2, 'F');
-  doc.setFontSize(5); doc.text('Envases Retornable', chartX + 74, chartY + 3.5);
-  doc.setFillColor(255, 153, 51); doc.rect(chartX + 70, chartY + 5, 3, 2, 'F');
-  doc.text('No Retornable', chartX + 74, chartY + 6.5);
+  doc.setFillColor(12, 110, 180); doc.rect(chartX + 55, chartY + 2, 3, 2, 'F');
+  doc.setFontSize(5); doc.text('Envases Retornable', chartX + 59, chartY + 3.5);
+  
+  doc.setFillColor(255, 153, 51); doc.rect(chartX + 55, chartY + 5, 3, 2, 'F');
+  doc.text('No Retornable', chartX + 59, chartY + 6.5);
+  
+  doc.setDrawColor(46, 204, 113); doc.setLineWidth(0.5); doc.line(chartX + 55, chartY + 9, chartX + 58, chartY + 9);
+  doc.setFillColor(46, 204, 113); doc.circle(chartX + 56.5, chartY + 9, 0.5, 'F');
+  doc.text('Producto Local (€)', chartX + 59, chartY + 9.5);
 
   // --- Table Area (Right) ---
-  const tableX = 110;
+  const tableX = 125;
   const tableY = currentY; // Aligned with chartY
 
   autoTable(doc, {
