@@ -94,7 +94,7 @@ export const generateHotelPDF = async (report: HotelReport): Promise<Blob> => {
   // --- Chart Area (Left) ---
   const chartX = margin;
   const chartY = currentY;
-  const chartWidth = 85;
+  const chartWidth = 75;
   const chartHeight = 65;
 
   // Find max value for dynamic scaling
@@ -202,14 +202,14 @@ export const generateHotelPDF = async (report: HotelReport): Promise<Blob> => {
   doc.text('Producto Local (€)', chartX + 59, chartY + 9.5);
 
   // --- Table Area (Right) ---
-  const tableX = 125;
+  const tableX = 110;
   const tableY = currentY; // Aligned with chartY
 
   autoTable(doc, {
     startY: tableY,
     margin: { left: tableX, bottom: 5 },
     tableWidth: pageWidth - tableX - margin,
-    head: [['Mes', 'Total (€)', 'Prod. local (€)', '%', 'Env. Ret. (u)', 'No Ret. (u)', '%', 'Art. no retorno (€)', '%']],
+    head: [['Mes', 'Total', 'Prod. Loc.', '%', 'Ret.', 'No Ret.', '%', 'Art. No Ret.', '%']],
     body: report.monthlyData.map(m => [
       m.mes,
       m.total > 0 ? m.total.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' €' : '',
@@ -222,7 +222,7 @@ export const generateHotelPDF = async (report: HotelReport): Promise<Blob> => {
       m.porcentajeArtNoRetorno > 0 ? (m.porcentajeArtNoRetorno * 100).toFixed(1).replace('.', ',') + '%' : ''
     ]),
     theme: 'grid',
-    styles: { fontSize: 7, cellPadding: 1.0, lineColor: [200, 200, 200], lineWidth: 0.1 },
+    styles: { fontSize: 6.5, cellPadding: 0.8, lineColor: [200, 200, 200], lineWidth: 0.1, overflow: 'linebreak' },
     headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
     bodyStyles: { halign: 'right', textColor: [0, 0, 0] },
     columnStyles: {
