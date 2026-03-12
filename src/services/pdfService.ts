@@ -50,12 +50,12 @@ export const generateHotelPDF = async (report: HotelReport): Promise<Blob> => {
   const titleLines = doc.splitTextToSize(titleText, titleMaxWidth);
   doc.text(titleLines, 85, currentY);
   
-  currentY += (titleLines.length * 8) + 4;
+  currentY += (titleLines.length * 8) + 2;
   
   doc.setFontSize(14);
   doc.text(`HOTEL ${report.hotelName.toUpperCase()}`, 85, currentY);
 
-  currentY += 16;
+  currentY += 12;
 
   // --- Annual Summary (Two Columns) ---
   const summaryY = currentY;
@@ -71,25 +71,25 @@ export const generateHotelPDF = async (report: HotelReport): Promise<Blob> => {
   doc.setFont('helvetica', 'normal');
   
   // Row 1
-  doc.text(`Total: ${s.total.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €`, col1X, summaryY + 8);
-  doc.text(`Retornables: ${s.envasesRetornable.toLocaleString('de-DE')} u   |   No retornables: ${s.noRetornable.toLocaleString('de-DE')} u`, col2X, summaryY + 8);
+  doc.text(`Total: ${s.total.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €`, col1X, summaryY + 7);
+  doc.text(`Retornables: ${s.envasesRetornable.toLocaleString('de-DE')} u   |   No retornables: ${s.noRetornable.toLocaleString('de-DE')} u`, col2X, summaryY + 7);
   
   // Row 2
-  doc.text(`Producto local: ${s.productoLocal.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €`, col1X, summaryY + 16);
-  doc.text(`% retornable: ${(s.porcentajeRetornable * 100).toFixed(1).replace('.', ',')}%`, col2X, summaryY + 16);
+  doc.text(`Producto local: ${s.productoLocal.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €`, col1X, summaryY + 14);
+  doc.text(`% retornable: ${(s.porcentajeRetornable * 100).toFixed(1).replace('.', ',')}%`, col2X, summaryY + 14);
   
   // Row 3
-  doc.text(`% producto local: ${(s.porcentajeLocal * 100).toFixed(1).replace('.', ',')}%`, col1X, summaryY + 24);
-  doc.text(`Art. envases no retorno: ${s.articulosNoRetorno.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €  |  %: ${(s.porcentajeArtNoRetorno * 100).toFixed(1).replace('.', ',')}%`, col2X, summaryY + 24);
+  doc.text(`% producto local: ${(s.porcentajeLocal * 100).toFixed(1).replace('.', ',')}%`, col1X, summaryY + 21);
+  doc.text(`Art. envases no retorno: ${s.articulosNoRetorno.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €  |  %: ${(s.porcentajeArtNoRetorno * 100).toFixed(1).replace('.', ',')}%`, col2X, summaryY + 21);
 
-  currentY = summaryY + 34;
+  currentY = summaryY + 30;
 
   // Source text
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
   doc.text('Fuente: hoja de cálculo (Total / Producto local / % / Envases retornable / No retornable / % / Artículos envases no retorno / %).', 85, currentY);
 
-  currentY += 12;
+  currentY += 10;
 
   // --- Chart Area (Left) ---
   const chartX = margin;
@@ -207,7 +207,7 @@ export const generateHotelPDF = async (report: HotelReport): Promise<Blob> => {
 
   autoTable(doc, {
     startY: tableY,
-    margin: { left: tableX },
+    margin: { left: tableX, bottom: 5 },
     tableWidth: pageWidth - tableX - margin,
     head: [['Mes', 'Total (€)', 'Prod. local (€)', '%', 'Env. Ret. (u)', 'No Ret. (u)', '%', 'Art. no retorno (€)', '%']],
     body: report.monthlyData.map(m => [
@@ -222,7 +222,7 @@ export const generateHotelPDF = async (report: HotelReport): Promise<Blob> => {
       m.porcentajeArtNoRetorno > 0 ? (m.porcentajeArtNoRetorno * 100).toFixed(1).replace('.', ',') + '%' : ''
     ]),
     theme: 'grid',
-    styles: { fontSize: 7.5, cellPadding: 1.2, lineColor: [200, 200, 200], lineWidth: 0.1 },
+    styles: { fontSize: 7, cellPadding: 1.0, lineColor: [200, 200, 200], lineWidth: 0.1 },
     headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
     bodyStyles: { halign: 'right', textColor: [0, 0, 0] },
     columnStyles: {
