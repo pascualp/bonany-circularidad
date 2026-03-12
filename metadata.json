@@ -1,0 +1,5 @@
+{
+  "name": "BonAny Circularidad PDF Generator",
+  "description": "Generador de informes de circularidad en PDF a partir de archivos Excel para hoteles.",
+  "requestFramePermissions": []
+}
