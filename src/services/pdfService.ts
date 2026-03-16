@@ -6,7 +6,8 @@ export const generateHotelPDF = async (report: HotelReport): Promise<Blob> => {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
-    format: 'a4'
+    format: 'a4',
+    compress: true
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
